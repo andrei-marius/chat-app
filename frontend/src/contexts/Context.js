@@ -5,6 +5,8 @@ const Context = createContext();
 export const ContextProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [displayName, setDisplayName] = useState(null);
+  const [keyPair, setKeyPair] = useState(null);
+  const [sharedSecret, setSharedSecret] = useState(null);
 
   const contextValue = useMemo(
     () => ({
@@ -12,8 +14,12 @@ export const ContextProvider = ({ children }) => {
       setSocket,
       displayName,
       setDisplayName,
+      keyPair,
+      setKeyPair,
+      sharedSecret,
+      setSharedSecret,
     }),
-    [socket, displayName]
+    [socket, displayName, keyPair, sharedSecret]
   );
 
   return <Context.Provider value={contextValue}>{children}</Context.Provider>;

@@ -5,7 +5,7 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
-import Chat from "./pages/Chat";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import { ContextProvider } from "./contexts/Context";
 
@@ -14,8 +14,8 @@ function App() {
     <ContextProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
         </Routes>
       </Router>
     </ContextProvider>

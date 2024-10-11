@@ -1,54 +1,61 @@
 import { useState, useEffect } from "react";
 import { useContextCustom } from "../contexts/Context";
 import NavBar from "../components/NavBar";
-import { aesEncrypt, aesDecrypt, importKey } from "../cryptography";
+import { 
+  encryptMessage,
+  decryptMessage,
+} from "../cryptography";
 
-const Chat = () => {
-  const { socket, displayName } = useContextCustom();
+function Chat() {
+  const { socket, displayName, sharedSecret } = useContextCustom();
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
 
   useEffect(() => {
-    socket.displayName = displayName;
-
     socket.on("chatMessage", async (encryptedMsg, displayName) => {
-      console.log(encryptedMsg)
-      const { ciphertext, iv, key } = encryptedMsg;
-      const keyNew = await importKey(key);
-      const decryptedMsg = await aesDecrypt(ciphertext, keyNew, iv);
-      const newMsg = { msg: decryptedMsg, displayName };
-      console.log(newMsg)
-      setChat((prevChat) => [...prevChat, newMsg]);
+      chatMessage(encryptedMsg, displayName);
     });
-
+    
     return () => {
       socket.off("chatMessage");
+      socket.off("connect");
     };
-  }, []);
+  }, [sharedSecret]);
 
+  const chatMessage = async (encryptedMsg, latestSenderDisplayName) => {
+    const { ciphertext, iv } = encryptedMsg;
+
+    try {
+      console.log(sharedSecret, iv, ciphertext);
+      const decryptedMsg = await decryptMessage(sharedSecret, iv, ciphertext);
+      const newMsg = { msg: decryptedMsg, displayName: latestSenderDisplayName };
+      setChat((prevChat) => [...prevChat, newMsg]);
+    } catch (err) {
+      console.error("Decryption failed:", err);
+    }
+  };
+    
   const sendMessage = async (e) => {
     e.preventDefault();
 
     if (message.trim()) {
-      const encryptedMsg = await aesEncrypt(message);
-      console.log(encryptedMsg)
+      console.log(sharedSecret, message);
+      const encryptedMsg = await encryptMessage(sharedSecret, message);
       socket.emit("chatMessage", encryptedMsg, displayName);
       setMessage("");
     }
   };
 
   return (
-    <div>
+    <div style={styles.container}>
       <NavBar />
       <div style={styles.chatWindow}>
         {chat.map((msg, index) => (
           <div
             key={index}
             style={{
-              backgroundColor:
-                socket.displayName === msg.displayName ? "gainsboro" : "unset",
-              alignSelf:
-                socket.displayName === msg.displayName ? "end" : "start",
+              backgroundColor: displayName === msg.displayName ? "gainsboro" : "unset",
+              alignSelf: displayName === msg.displayName ? "end" : "start",
               ...styles.message,
             }}
           >
@@ -68,6 +75,7 @@ const Chat = () => {
           SEND
         </button>
       </form>
+        Chat as {displayName}
     </div>
   );
 };
@@ -75,6 +83,9 @@ const Chat = () => {
 export default Chat;
 
 const styles = {
+  container: {
+    textAlign: 'center',
+  },
   chatWindow: {
     border: "1px solid #ccc",
     height: "400px",

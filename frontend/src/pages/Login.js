@@ -2,19 +2,32 @@ import io from "socket.io-client";
 import { useContextCustom } from "../contexts/Context";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { generateKeyPair, exportPrivateKeyToHex, exportPublicKeyToHex } from "../cryptography";
 
 const Login = () => {
-  const { setSocket, setDisplayName } = useContextCustom();
+  const { setSocket, setDisplayName, setKeyPair } = useContextCustom();
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     
     if (name.trim()) {
       setSocket(io("http://localhost:5000"));
       setDisplayName(name);
-      navigate("/chat");
+      const keyPair = await generateKeyPair();
+      // console.log(keyPair);
+      setKeyPair(keyPair);
+
+      // Export and convert private key to hex
+      const privateKeyHex = await exportPrivateKeyToHex(keyPair.privateKey);
+      console.log(`Private Key (Hex): ${privateKeyHex}`);
+
+      // Export and convert public key to hex
+      const publicKeyHex = await exportPublicKeyToHex(keyPair.publicKey);
+      console.log(`Public Key (Hex): ${publicKeyHex}`);
+
+      navigate("/");
     }
   };
 

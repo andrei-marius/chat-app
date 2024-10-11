@@ -1,67 +1,116 @@
 const { subtle } = crypto;
 
-async function generateAesKey(length = 256) {
-  const key = await subtle.generateKey(
+async function generateKeyPair() {
+  return await subtle.generateKey(
     {
-      name: "AES-CBC",
-      length,
+      name: "ECDH",
+      namedCurve: "P-521"
     },
-    true,
-    ["encrypt", "decrypt"]
+    true, 
+    ["deriveKey", "deriveBits"]
   );
-
-  return key;
 }
 
-async function aesEncrypt(plaintext) {
-  const ec = new TextEncoder();
-  const key = await generateAesKey();
-  const iv = crypto.getRandomValues(new Uint8Array(16));
+async function exportPublicKey(keyPair) {
+  return await subtle.exportKey("jwk", keyPair.publicKey); 
+}
 
-  const ciphertext = await crypto.subtle.encrypt(
+async function importPublicKey(jwkPublicKey) {
+  return await subtle.importKey(
+    "jwk",
+    jwkPublicKey,
     {
-      name: "AES-CBC",
-      iv,
+      name: "ECDH",
+      namedCurve: "P-521"
     },
-    key,
-    ec.encode(plaintext)
+    false, 
+    []
+  );
+}
+
+async function deriveSharedSecret(privateKey, publicKey) {
+  return await subtle.deriveKey(
+    {
+      name: "ECDH",
+      public: publicKey, 
+    },
+    privateKey, 
+    {
+      name: "AES-GCM",
+      length: 256, 
+    },
+    true, 
+    ["encrypt", "decrypt"] 
+  );
+}
+
+async function encryptMessage(sharedKey, message) {
+  const iv = crypto.getRandomValues(new Uint8Array(12)); 
+  const encoder = new TextEncoder();
+  const ciphertext = await subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: iv,
+    },
+    sharedKey, 
+    encoder.encode(message) 
   );
 
-  const exportedKey = await crypto.subtle.exportKey("jwk", key);
-
   return {
-    key: exportedKey,
-    iv: Array.from(iv),
-    ciphertext: Array.from(new Uint8Array(ciphertext)),
+    iv: Array.from(iv), 
+    ciphertext: Array.from(new Uint8Array(ciphertext))
   };
 }
 
-async function importKey(key) {
-  const keyNew = await crypto.subtle.importKey(
-    "jwk",
-    key,
+async function decryptMessage(sharedKey, iv, ciphertext) {
+  const decoder = new TextDecoder();
+  const decrypted = await subtle.decrypt(
     {
-      name: "AES-CBC",
+      name: "AES-GCM",
+      iv: new Uint8Array(iv), 
     },
-    false,
-    ["decrypt"]
+    sharedKey, 
+    new Uint8Array(ciphertext) 
   );
 
-  return keyNew;
+  return decoder.decode(decrypted); 
 }
 
-async function aesDecrypt(ciphertext, key, iv) {
-  const dec = new TextDecoder();
-  const plaintext = await crypto.subtle.decrypt(
-    {
-      name: "AES-CBC",
-      iv: new Uint8Array(iv),
-    },
-    key,
-    new Uint8Array(ciphertext)
-  );
-
-  return dec.decode(plaintext);
+async function exportPrivateKeyToHex(privateKey) {
+  const exported = await subtle.exportKey("pkcs8", privateKey);
+  const byteArray = new Uint8Array(exported);
+  
+  return Array.from(byteArray)
+      .map(byte => ('0' + byte.toString(16)).slice(-2)) 
+      .join('');
 }
 
-export { aesEncrypt, aesDecrypt, importKey };
+async function exportPublicKeyToHex(publicKey) {
+  const exported = await subtle.exportKey("spki", publicKey);
+  const byteArray = new Uint8Array(exported);
+  
+  return Array.from(byteArray)
+      .map(byte => ('0' + byte.toString(16)).slice(-2))
+      .join('');
+}
+
+async function exportSharedKeyToHex(key) {
+  const exported = await subtle.exportKey("raw", key);
+  const byteArray = new Uint8Array(exported);
+
+  return Array.from(byteArray)
+      .map(byte => ('0' + byte.toString(16)).slice(-2)) 
+      .join('');
+}
+
+export {
+  generateKeyPair,
+  exportPublicKey,
+  importPublicKey,
+  deriveSharedSecret,
+  encryptMessage,
+  decryptMessage,
+  exportPrivateKeyToHex,
+  exportPublicKeyToHex,
+  exportSharedKeyToHex,
+}

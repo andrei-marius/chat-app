@@ -3,12 +3,14 @@ import { useContextCustom } from "../contexts/Context";
 
 const NavBar = () => {
   const navigate = useNavigate();
-  const { setSocket, setDisplayName } = useContextCustom();
+  const { setSocket, setDisplayName, setKeyPair, setSharedSecret } = useContextCustom();
 
   const handleLogout = () => {
     setSocket(null);
     setDisplayName(null);
-    navigate("/");
+    setKeyPair(null);
+    setSharedSecret(null);
+    navigate("/login");
   };
 
   return (
