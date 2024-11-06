@@ -4,7 +4,7 @@ async function generateKeyPair() {
   return await subtle.generateKey(
     {
       name: "ECDH",
-      namedCurve: "P-521"
+      namedCurve: "P-256"
     },
     true, 
     ["deriveKey", "deriveBits"]
@@ -21,7 +21,7 @@ async function importPublicKey(jwkPublicKey) {
     jwkPublicKey,
     {
       name: "ECDH",
-      namedCurve: "P-521"
+      namedCurve: "P-256"
     },
     false, 
     []
