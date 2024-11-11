@@ -10,9 +10,43 @@ async function generateKeyPair() {
     ["deriveKey", "deriveBits"]
   );
 }
+async function deriveRootChainKeys(rootKey, dhOutput) {
+    // Import the root key as HKDF input key material (IKM)
+    const hkdfKey = await subtle.importKey(
+        "jwk",
+        rootKey,
+        { name: "HKDF" },
+        false,
+        ["deriveKey"]
+    );
+
+    // Derive the new root key and chain key
+    const derivedKeys = await subtle.deriveKey(
+        {
+            name: "HKDF",
+            hash: "SHA-256",
+            salt: dhOutput,  // New DH shared secret as salt
+            info: new Uint8Array([]),  // Additional context if needed
+        },
+        hkdfKey,
+        { name: "HKDF", length: 512 },  // Derive 512 bits (64 bytes) to split into two keys
+        true,
+        ["deriveBits"]
+    );
+
+    // Split derived bits into two keys: new root key and chain key
+    const bits = new Uint8Array(await subtle.exportKey("jwk", derivedKeys));
+    const newRootKey = bits.slice(0, 32);  // First 32 bytes for the new root key
+    const chainKey = bits.slice(32, 64);   // Next 32 bytes for the output chain key
+
+    return { newRootKey, chainKey };
+}
 
 async function exportPublicKey(keyPair) {
   return await subtle.exportKey("jwk", keyPair.publicKey); 
+}
+async function exportHKDF(keyPair) {
+    return await subtle.exportKey("jwk", keyPair);
 }
 
 async function importPublicKey(jwkPublicKey) {
@@ -113,4 +147,6 @@ export {
   exportPrivateKeyToHex,
   exportPublicKeyToHex,
   exportSharedKeyToHex,
+  deriveRootChainKeys,
+  exportHKDF,
 }

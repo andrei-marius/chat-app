@@ -6,6 +6,8 @@ import {
   deriveSharedSecret,
   exportPublicKeyToHex,
   exportSharedKeyToHex,
+  deriveRootChainKeys,
+  exportHKDF,
 } from "../cryptography";
 import Chat from "../components/Chat";
 
@@ -24,13 +26,18 @@ const Home = () => {
       socket.off("connect");
     };
   }, []);
-
+  // broke the encryption of messages
   const getSharedSecret = async (client2PublicKey) => {
     const sharedSecret = await deriveSharedSecret(keyPair.privateKey, client2PublicKey);
-    setSharedSecret(sharedSecret)
+      setSharedSecret(sharedSecret);
     
     const sharedKeyHex = await exportSharedKeyToHex(sharedSecret);
-    console.log(`Shared Key (Hex): ${sharedKeyHex}`);
+      console.log(`Shared Key (Hex): ${sharedKeyHex}`);
+     // test of kdf function keyPair.privateKey should be the rootKey (the first shared secret) or last key in the chain. sharedSecret should the the new DH output from dh ratchet 
+      const { newRootKey, chainKey } = await deriveRootChainKeys(keyPair.privateKey, sharedSecret);
+      const newRootKeyJWk = await exportHKDF(newRootKey);
+      const chainKeyJWK = await exportHKDF(chainKey);
+      console.log("HKDF KEYS",newRootKeyJWk, chainKeyJWK);
   };
 
   const exchangePublicKey = async (client2PublicKeyJwk, publicKeyHex) => {
