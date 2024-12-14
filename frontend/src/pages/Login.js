@@ -2,10 +2,10 @@ import io from "socket.io-client";
 import { useContextCustom } from "../contexts/Context";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { generateKeyPair, exportPrivateKeyToHex, exportPublicKeyToHex } from "../cryptography";
+import { generateECDHKeyPair, generateECDSAKeyPair, exportPrivateKeyToHex, exportPublicKeyToHex } from "../cryptography";
 
 const Login = () => {
-  const { setSocket, setDisplayName, setKeyPair } = useContextCustom();
+  const { setSocket, setDisplayName, setECDHKeyPair, setECDSAKeyPair } = useContextCustom();
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
@@ -15,16 +15,18 @@ const Login = () => {
     if (name.trim()) {
       setSocket(io("http://localhost:5000"));
       setDisplayName(name);
-      const keyPair = await generateKeyPair();
+      const ECDHkeyPair = await generateECDHKeyPair();
+      const ECDSAkeyPair = await generateECDSAKeyPair();
       // console.log(keyPair);
-      setKeyPair(keyPair);
+      setECDHKeyPair(ECDHkeyPair);
+      setECDSAKeyPair(ECDSAkeyPair);
 
       // Export and convert private key to hex
-      const privateKeyHex = await exportPrivateKeyToHex(keyPair.privateKey);
+      const privateKeyHex = await exportPrivateKeyToHex(ECDHkeyPair.privateKey);
       console.log(`Private Key (Hex): ${privateKeyHex}`);
 
       // Export and convert public key to hex
-      const publicKeyHex = await exportPublicKeyToHex(keyPair.publicKey);
+      const publicKeyHex = await exportPublicKeyToHex(ECDHkeyPair.publicKey);
       console.log(`Public Key (Hex): ${publicKeyHex}`);
 
       navigate("/");

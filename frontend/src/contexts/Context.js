@@ -5,8 +5,10 @@ const Context = createContext();
 export const ContextProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [displayName, setDisplayName] = useState(null);
-  const [keyPair, setKeyPair] = useState(null);
+  const [ECDHKeyPair, setECDHKeyPair] = useState(null);
+  const [ECDSAKeyPair, setECDSAKeyPair] = useState(null);
   const [sharedSecret, setSharedSecret] = useState(null);
+  const [client2ECDSAPublicKey, setClient2ECDSAPublicKey] = useState(null);
 
   const contextValue = useMemo(
     () => ({
@@ -14,12 +16,16 @@ export const ContextProvider = ({ children }) => {
       setSocket,
       displayName,
       setDisplayName,
-      keyPair,
-      setKeyPair,
+      ECDHKeyPair,
+      ECDSAKeyPair,
+      setECDHKeyPair,
+      setECDSAKeyPair,
       sharedSecret,
       setSharedSecret,
+      client2ECDSAPublicKey,
+      setClient2ECDSAPublicKey,
     }),
-    [socket, displayName, keyPair, sharedSecret]
+    [socket, displayName, ECDHKeyPair, ECDSAKeyPair, sharedSecret, client2ECDSAPublicKey]
   );
 
   return <Context.Provider value={contextValue}>{children}</Context.Provider>;

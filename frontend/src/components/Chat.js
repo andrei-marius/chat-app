@@ -4,45 +4,53 @@ import NavBar from "../components/NavBar";
 import { 
   encryptMessage,
   decryptMessage,
+  signMessage,
+  verifySignature,
 } from "../cryptography";
 
 function Chat() {
-  const { socket, displayName, sharedSecret } = useContextCustom();
+  const { socket, displayName, sharedSecret, ECDSAKeyPair, client2ECDSAPublicKey } = useContextCustom();
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
 
   useEffect(() => {
-    socket.on("chatMessage", async (encryptedMsg, displayName) => {
-      chatMessage(encryptedMsg, displayName);
+    socket.on("chatMessageVerifyAndDecryptAndUpdate", async (encryptedMsg, signature, latestSenderDisplayName) => {
+      await verifyAndDecrypt(encryptedMsg, signature, latestSenderDisplayName);
     });
     
     return () => {
       socket.off("chatMessage");
-      socket.off("connect");
     };
-  }, [sharedSecret]);
+  }, [sharedSecret, socket]);
 
-  const chatMessage = async (encryptedMsg, latestSenderDisplayName) => {
-    const { ciphertext, iv } = encryptedMsg;
+  const verifyAndDecrypt = async (encryptedMsg, signature, latestSenderDisplayName) => {
+    const { ciphertext, iv, tag } = encryptedMsg;
 
-    try {
-      console.log(sharedSecret, iv, ciphertext);
-      const decryptedMsg = await decryptMessage(sharedSecret, iv, ciphertext);
-      const newMsg = { msg: decryptedMsg, displayName: latestSenderDisplayName };
-      setChat((prevChat) => [...prevChat, newMsg]);
-    } catch (err) {
-      console.error("Decryption failed:", err);
+    if (client2ECDSAPublicKey) {
+      const isVerified = await verifySignature(client2ECDSAPublicKey, encryptedMsg, signature);
+      
+      if (isVerified) {
+        const decryptedMsg = await decryptMessage(sharedSecret, iv, ciphertext, tag);
+        updateChat(decryptedMsg, latestSenderDisplayName)
+      } else {
+        console.error("Signature verification failed");
+      }
     }
-  };
+  }
+
+  const updateChat = (decryptedMsg, latestSenderDisplayName) => {
+    setChat((prevChat) => [...prevChat, { msg: decryptedMsg || message, displayName: latestSenderDisplayName || displayName }]);
+    setMessage("");
+  }
     
   const sendMessage = async (e) => {
     e.preventDefault();
 
     if (message.trim()) {
-      console.log(sharedSecret, message);
       const encryptedMsg = await encryptMessage(sharedSecret, message);
-      socket.emit("chatMessage", encryptedMsg, displayName);
-      setMessage("");
+      const signature = await signMessage(ECDSAKeyPair.privateKey, encryptedMsg);
+      socket.emit("chatMessage", encryptedMsg, signature, displayName);
+      updateChat()
     }
   };
 

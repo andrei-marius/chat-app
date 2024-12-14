@@ -27,24 +27,33 @@ io.on("connection", (socket) => {
   //   io.emit('usersReady');
   // }
 
-  socket.on("sendPublicKey", (publicKeyJwk, publicKeyHex) => {
+  socket.on("sendPublicKeys", (publicECDSAKeyJwk, publicECDHKeyJwk, publicKeyHex) => {
     console.log('Received public key', publicKeyHex);
 
-    publicKeys.push({ publicKeyJwk, publicKeyHex });
+    publicKeys.push({ publicECDSAKeyJwk, publicECDHKeyJwk, publicKeyHex });
 
     if (publicKeys.length === 2) {
       
       connectedUsers.forEach((user, index) => {
         const otherIndex = index === 0 ? 1 : 0; 
-        user.socket.emit("exchangePublicKey", publicKeys[otherIndex].publicKeyJwk, publicKeys[otherIndex].publicKeyHex);
+        user.socket.emit("exchangePublicKeys", publicKeys[otherIndex].publicECDSAKeyJwk, publicKeys[otherIndex].publicECDHKeyJwk, publicKeys[otherIndex].publicKeyHex);
       });
 
       // publicKeys = []; 
     }
   });
 
-  socket.on("chatMessage", (encryptedMsg, displayName) => {
-    io.emit("chatMessage", encryptedMsg, displayName);
+  socket.on("chatMessage", (encryptedMsg, signature, latestSenderDisplayName) => {
+    const otherUser = connectedUsers.find((user) => user.id !== socket.id);
+
+    if (otherUser) {
+      otherUser.socket.emit(
+        "chatMessageVerifyAndDecryptAndUpdate",
+        encryptedMsg,
+        signature,
+        latestSenderDisplayName
+      );
+    } 
   });
 
   socket.on("disconnect", () => {
