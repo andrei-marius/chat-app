@@ -100,7 +100,6 @@ async function decryptMessage(sharedKey, iv, ciphertext, tag) {
       {
         name: "AES-GCM",
         iv: new Uint8Array(iv),
-        additionalData: new Uint8Array(0), // optional additional authenticated data
         tagLength: 128,
       },
       sharedKey,
@@ -127,7 +126,7 @@ async function signMessage(privateKey, encryptedMessage) {
     {
       name: "ECDSA",
       namedCurve: "P-256", 
-      hash: { name: "SHA-256" }, 
+      hash: { name: "SHA-512" }, 
     },
     privateKey,
     messageToSign
@@ -148,7 +147,7 @@ async function verifySignature(publicKey, encryptedMessage, signature) {
     {
       name: "ECDSA",
       namedCurve: "P-256", 
-      hash: { name: "SHA-256" },  
+      hash: { name: "SHA-512" },  
     },
     publicKey,
     signature,
