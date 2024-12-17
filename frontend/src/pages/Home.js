@@ -4,7 +4,7 @@ import {
   exportPublicKey,
   importECDHPublicKey,
   importECDSAPublicKey,
-  deriveSharedSecret,
+  deriveSharedSecretKey,
   exportPublicKeyToHex,
   exportSharedKeyToHex,
 } from "../cryptography";
@@ -27,7 +27,7 @@ const Home = () => {
   }, [socket]);
 
   const getSharedSecret = async (client2PublicKey) => {
-    const sharedSecret = await deriveSharedSecret(ECDHKeyPair.privateKey, client2PublicKey);
+    const sharedSecret = await deriveSharedSecretKey(ECDHKeyPair.privateKey, client2PublicKey);
     setSharedSecret(sharedSecret)
     
     const sharedKeyHex = await exportSharedKeyToHex(sharedSecret);

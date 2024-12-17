@@ -53,7 +53,7 @@ async function importECDSAPublicKey(jwkPublicKey) {
 }
 
 
-async function deriveSharedSecret(privateKey, publicKey) {
+async function deriveSharedSecretKey(privateKey, publicKey) {
   return await subtle.deriveKey(
     {
       name: "ECDH",
@@ -188,7 +188,7 @@ export {
   exportPublicKey,
   importECDHPublicKey,
   importECDSAPublicKey,
-  deriveSharedSecret,
+  deriveSharedSecretKey,
   encryptMessage,
   decryptMessage,
   signMessage,
