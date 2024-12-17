@@ -34,7 +34,7 @@ async function importECDHPublicKey(jwkPublicKey) {
       name: "ECDH",
       namedCurve: "P-256"
     },
-    true, 
+    false, 
     []
   );
 }
@@ -47,7 +47,7 @@ async function importECDSAPublicKey(jwkPublicKey) {
       name: "ECDSA",
       namedCurve: "P-256", 
     },
-    true, 
+    false, 
     ["verify"] 
   );
 }
@@ -64,7 +64,7 @@ async function deriveSharedSecret(privateKey, publicKey) {
       name: "AES-GCM",
       length: 256, 
     },
-    true, 
+    false, 
     ["encrypt", "decrypt"] 
   );
 }
